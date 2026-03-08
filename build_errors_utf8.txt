@@ -1,0 +1,4 @@
+﻿nodes/GoogleMaps/GoogleMaps.node.ts(256,65): error TS2345: Argument of type '{ method: string; uri: string; qs: { [key: string]: any; }; json: boolean; }' is not assignable to parameter of type 'string | IRequestOptions'.
+  Type '{ method: string; uri: string; qs: { [key: string]: any; }; json: boolean; }' is not assignable to type 'IRequestOptions'.
+    Types of property 'method' are incompatible.
+      Type 'string' is not assignable to type 'IHttpRequestMethods | undefined'.
