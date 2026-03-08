@@ -42,6 +42,18 @@ async function extractEmailsAndSocials(context: IExecuteFunctions, websiteUrl: s
     if (!websiteUrl) return { emails: [], social_links: [] };
 
     try {
+        // SSRF Protection: Block private and local IP ranges
+        const urlObj = new URL(websiteUrl);
+        const host = urlObj.hostname;
+
+        const isLocalHost = host === 'localhost' || host === '127.0.0.1' || host === '::1';
+        const isPrivateIP = /^10\.|^172\.(1[6-9]|2[0-9]|3[0-1])\.|^192\.168\./.test(host);
+
+        if (isLocalHost || isPrivateIP) {
+            console.warn(`Blocked attempt to access private/local IP: ${host}`);
+            return { emails: [], social_links: [] };
+        }
+
         const html = await context.helpers.httpRequest({
             method: 'GET',
             url: websiteUrl,
@@ -334,7 +346,7 @@ export class GoogleMaps implements INodeType {
                     { name: 'Contact', value: 'contact', description: 'Basic + phone number + website.' },
                     { name: 'Full (Reviews + Hours + Photos)', value: 'full', description: 'All data including reviews, opening hours, price level, and photo references. Highest cost.' },
                 ],
-                default: 'full',
+                default: 'basic',
                 description: 'Controls which fields are fetched (Text Search, Search Nearby, Place Details).',
             },
             // --- REVIEW SORTING & FILTERING ---

@@ -1,7 +1,7 @@
 {
   "name": "n8n-nodes-google-maps-agentic",
   "version": "0.5.8",
-  "description": "Production-grade Google Maps & Places API scraper for n8n. Specifically designed for AI Agents, B2B lead generation, and mass email scraping without rate limits.",
+  "description": "Production-grade Google Maps & Places API scraper for n8n. Specifically designed for AI Agents, B2B lead generation, and mass email scraping with built-in rate limit handling.",
   "keywords": [
     "n8n-community-node-package",
     "n8n",
