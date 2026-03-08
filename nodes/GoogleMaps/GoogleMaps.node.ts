@@ -224,7 +224,6 @@ export class GoogleMaps implements INodeType {
                     { name: '1. Text Search (Paginated)', value: 'text_search', description: 'Natural language search. Supports pagination up to 60 results. Includes all features (Emails, Reviews, etc).' },
                     { name: '2. Get Place Details', value: 'get_place_details', description: 'Deep scrape: reviews, hours, photos, contact info using a place_id.' },
                     { name: '3. Search Nearby', value: 'search_nearby', description: 'Search around a latitude/longitude with a radius. Includes all features.' },
-                    { name: '4. Get Photo', value: 'get_photo', description: 'Get an actual image URL from a photo_reference returned by Get Place Details.' },
                     { name: 'Geocode', value: 'maps_geocode', description: 'Convert an address into lat/lng coordinates.' },
                     { name: 'Reverse Geocode', value: 'maps_reverse_geocode', description: 'Convert coordinates into a readable address.' },
                     { name: 'Distance Matrix', value: 'maps_distance_matrix', description: 'Calculate travel times/distances between locations.' },
@@ -271,9 +270,9 @@ export class GoogleMaps implements INodeType {
                 displayName: 'Place ID',
                 name: 'place_id',
                 type: 'string',
-                displayOptions: { show: { operation: ['get_place_details', 'get_photo'] } },
+                displayOptions: { show: { operation: ['get_place_details'] } },
                 default: '',
-                description: 'The Google place_id (for Get Place Details or Get Photo).',
+                description: 'The Google place_id (for Get Place Details).',
             },
             {
                 displayName: 'Origins',
@@ -314,7 +313,6 @@ export class GoogleMaps implements INodeType {
                 displayName: 'Language Code',
                 name: 'languageCode',
                 type: 'string',
-                displayOptions: { hide: { operation: ['get_photo'] } },
                 default: '',
                 description: 'ISO 639-1 language code for localized results. Examples: "en", "es", "ja", "ar". Leave empty for default.',
             },
@@ -322,7 +320,6 @@ export class GoogleMaps implements INodeType {
                 displayName: 'Region Code',
                 name: 'regionCode',
                 type: 'string',
-                displayOptions: { hide: { operation: ['get_photo'] } },
                 default: '',
                 description: 'ISO 3166-1 Alpha-2 region code for biased results. Examples: "US", "GB", "IN". Leave empty for default.',
             },
@@ -377,23 +374,7 @@ export class GoogleMaps implements INodeType {
                 default: '',
                 description: 'Filter reviews containing a specific keyword (case-insensitive). Note: Google API limits responses to max 5 reviews total.',
             },
-            // --- PHOTO FETCHER ---
-            {
-                displayName: 'Photo Reference',
-                name: 'photoReference',
-                type: 'string',
-                displayOptions: { show: { operation: ['get_photo'] } },
-                default: '',
-                description: 'The photo resource name from Get Place Details (e.g., "places/PLACE_ID/photos/PHOTO_REF"). Used only for Get Photo.',
-            },
-            {
-                displayName: 'Photo Max Width',
-                name: 'photoMaxWidth',
-                type: 'number',
-                displayOptions: { show: { operation: ['get_photo'] } },
-                default: 400,
-                description: 'Maximum width in pixels for the fetched photo (Get Photo only).',
-            },
+
         ],
     };
 
@@ -425,8 +406,6 @@ export class GoogleMaps implements INodeType {
                 const languageCode = this.getNodeParameter('languageCode', i, '') as string;
                 const regionCode = this.getNodeParameter('regionCode', i, '') as string;
                 const dataFields = this.getNodeParameter('dataFields', i, 'full') as string;
-                const photoReference = this.getNodeParameter('photoReference', i, '') as string;
-                const photoMaxWidth = this.getNodeParameter('photoMaxWidth', i, 400) as number;
 
                 // Build dynamic headers for New Places API
                 const newApiHeaders: { [key: string]: string } = {
@@ -556,36 +535,6 @@ export class GoogleMaps implements INodeType {
 
                     const mapped = await transformPlaceResults(this, [responseData], extractEmails, dataFields, i);
                     returnData.push({ json: mapped[0] });
-
-                    // ================================================================
-                    //  GET PHOTO — New operation
-                    // ================================================================
-                } else if (operation === 'get_photo') {
-                    if (!photoReference) { returnData.push({ json: { agent_error: 'Please provide a photoReference string (e.g., "places/PLACE_ID/photos/PHOTO_REF").' } }); continue; }
-
-                    const photoUrl = `https://places.googleapis.com/v1/${photoReference}/media?key=${apiKey}&maxWidthPx=${photoMaxWidth}&skipHttpRedirect=true`;
-
-                    const options = {
-                        method: 'GET' as IHttpRequestMethods,
-                        url: photoUrl,
-                        json: true,
-                        ignoreHttpStatusErrors: true,
-                    };
-
-                    const responseData = await httpRequestWithRetry(this, options);
-
-                    if (responseData?.error) {
-                        returnData.push({ json: { agent_error: `Google API Error: ${responseData.error.message}` } });
-                        continue;
-                    }
-
-                    returnData.push({
-                        json: {
-                            photo_url: responseData.photoUri || '',
-                            photo_reference: photoReference,
-                            width: photoMaxWidth,
-                        },
-                    });
 
                     // ================================================================
                     //  LEGACY APIs: Geocode, Reverse Geocode, Distance Matrix, Directions
