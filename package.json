@@ -20,7 +20,7 @@
   "author": "Madv6",
   "repository": {
     "type": "git",
-    "url": "https://github.com/madv6/n8n-nodes-google-maps-agentic.git"
+    "url": "https://github.com/Madhan230205/n8n-nodes-google-maps-agentic.git"
   },
   "main": "index.js",
   "files": [
