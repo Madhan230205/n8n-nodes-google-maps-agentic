@@ -366,6 +366,7 @@ export class GoogleMaps implements INodeType {
                 displayName: 'Review Min Rating',
                 name: 'reviewMinRating',
                 type: 'number',
+                typeOptions: { minValue: 1, maxValue: 5 },
                 displayOptions: { show: { operation: ['text_search', 'search_nearby', 'get_place_details'], dataFields: ['full'] } },
                 default: 1,
                 description: 'Only return reviews with rating >= this value (1-5). Use 1 to return all. Use 4 for positive-only reviews.',
@@ -374,6 +375,7 @@ export class GoogleMaps implements INodeType {
                 displayName: 'Review Max Rating',
                 name: 'reviewMaxRating',
                 type: 'number',
+                typeOptions: { minValue: 1, maxValue: 5 },
                 displayOptions: { show: { operation: ['text_search', 'search_nearby', 'get_place_details'], dataFields: ['full'] } },
                 default: 5,
                 description: 'Only return reviews with rating <= this value (1-5). Use 3 to get negative reviews only for competitor analysis.',
@@ -417,7 +419,7 @@ export class GoogleMaps implements INodeType {
                 const extractEmails = this.getNodeParameter('extractEmails', i, false) as boolean;
                 const languageCode = this.getNodeParameter('languageCode', i, '') as string;
                 const regionCode = this.getNodeParameter('regionCode', i, '') as string;
-                const dataFields = this.getNodeParameter('dataFields', i, 'full') as string;
+                const dataFields = this.getNodeParameter('dataFields', i, 'basic') as string;
 
                 // Build dynamic headers for New Places API
                 const newApiHeaders: { [key: string]: string } = {
@@ -550,6 +552,9 @@ export class GoogleMaps implements INodeType {
 
                     // ================================================================
                     //  LEGACY APIs: Geocode, Reverse Geocode, Distance Matrix, Directions
+                    //  Note: These APIs do not support header-based auth. The API key 
+                    //  must be passed in the query string, which is inherently less secure 
+                    //  but unavoidable for these specific endpoints.
                     // ================================================================
                 } else {
                     let url = '';
