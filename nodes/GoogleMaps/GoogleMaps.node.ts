@@ -42,14 +42,29 @@ async function extractEmailsAndSocials(context: IExecuteFunctions, websiteUrl: s
     if (!websiteUrl) return { emails: [], social_links: [] };
 
     try {
-        // SSRF Protection: Block private and local IP ranges
+        // SSRF Protection: Block private, local, link-local, and metadata ranges
         const urlObj = new URL(websiteUrl);
         const host = urlObj.hostname;
 
-        const isLocalHost = host === 'localhost' || host === '127.0.0.1' || host === '::1';
-        const isPrivateIP = /^10\.|^172\.(1[6-9]|2[0-9]|3[0-1])\.|^192\.168\./.test(host);
+        // Block non-HTTP schemes (e.g., file://, ftp://, gopher://)
+        const acceptedSchemes = ['http:', 'https:'];
+        if (!acceptedSchemes.includes(urlObj.protocol)) {
+            console.warn(`Blocked non-HTTP scheme: ${urlObj.protocol}`);
+            return { emails: [], social_links: [] };
+        }
 
-        if (isLocalHost || isPrivateIP) {
+        // Block all bare numeric IPv4 addresses — legitimate sites use hostnames
+        const isNumericIPv4 = /^\d{1,3}(\.\d{1,3}){3}$/.test(host);
+        if (isNumericIPv4) {
+            console.warn(`Blocked numeric IPv4 address: ${host}`);
+            return { emails: [], social_links: [] };
+        }
+
+        const isLocalHost = host === 'localhost' || host === '127.0.0.1' || host === '::1' || host === '0.0.0.0';
+        const isPrivateIP = /^10\.|^172\.(1[6-9]|2[0-9]|3[0-1])\.|^192\.168\.|^169\.254\./.test(host);
+        const isMetadata = host === 'metadata.google.internal';
+
+        if (isLocalHost || isPrivateIP || isMetadata) {
             console.warn(`Blocked attempt to access private/local IP: ${host}`);
             return { emails: [], social_links: [] };
         }
